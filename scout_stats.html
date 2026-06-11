@@ -219,6 +219,7 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16
       </div>
       <button class="btn-jogo" onclick="addJogo()">🏁 +1 Jogo</button>
       <button class="btn-jogo" style="background:rgba(239,68,68,.2);border-color:rgba(239,68,68,.4)" onclick="removeJogo()">−1</button>
+      <button class="btn-jogo" style="background:rgba(239,68,68,.25);border-color:rgba(239,68,68,.5)" onclick="deletarTimeAtual()">🗑 Apagar Time</button>
     </div>
   </div>
 
@@ -343,7 +344,8 @@ function renderTimes(q){
     var i=times.indexOf(t);
     var gols=t.jogadores.reduce(function(s,j){ return s+(j.gols||0); },0);
     var passes=t.jogadores.reduce(function(s,j){ return s+(j.passes||0); },0);
-    return '<div class="team-card" onclick="abrirTime('+i+')">'
+    return '<div class="team-card" style="position:relative" onclick="abrirTime('+i+')">'
+      +'<button onclick="event.stopPropagation();deletarTime('+i+')" style="position:absolute;top:8px;right:8px;background:rgba(239,68,68,.15);border:none;color:var(--red);border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;z-index:2">🗑</button>'
       +'<div><span class="team-liga-badge '+ligaBadge[t.liga]+'">'+ligaLabels[t.liga]+'</span></div>'
       +'<div class="team-emoji">'+t.emoji+'</div>'
       +'<div class="team-name">'+t.nome+'</div>'
@@ -365,6 +367,22 @@ function abrirTime(idx){
 }
 
 function voltarTimes(){ currentIdx=null; showPage('times'); renderTimes(); }
+
+function deletarTime(idx){
+  var t=times[idx];
+  if(!confirm('Apagar "'+t.nome+'" e todos os '+t.jogadores.length+' jogadores?')) return;
+  times.splice(idx,1);
+  salvar(); renderTimes();
+  toast('🗑 '+t.nome+' apagado!');
+}
+
+function deletarTimeAtual(){
+  var t=times[currentIdx];
+  if(!confirm('Apagar "'+t.nome+'" e todos os '+t.jogadores.length+' jogadores? Essa ação não pode ser desfeita!')) return;
+  times.splice(currentIdx,1);
+  salvar(); voltarTimes();
+  toast('🗑 '+t.nome+' apagado!');
+}
 
 function addJogo(){
   var t=times[currentIdx]; t.jogos++;
