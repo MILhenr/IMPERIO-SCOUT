@@ -1,12 +1,150 @@
-from flask import Flask, send_file
-import os
+import os, uuid, json
+from datetime import datetime
+from flask import Flask, request, jsonify, send_file
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+def get_db():
+    return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor, sslmode="require")
+
+def init_db():
+    with get_db() as conn:
+        with conn.cursor() as c:
+            c.execute('''CREATE TABLE IF NOT EXISTS times (
+                id TEXT PRIMARY KEY,
+                nome TEXT NOT NULL,
+                emoji TEXT DEFAULT '⚽',
+                liga TEXT DEFAULT 'lnf',
+                jogos INTEGER DEFAULT 0,
+                criado_em TEXT
+            )''')
+            c.execute('''CREATE TABLE IF NOT EXISTS jogadores (
+                id TEXT PRIMARY KEY,
+                time_id TEXT REFERENCES times(id) ON DELETE CASCADE,
+                num TEXT DEFAULT '—',
+                nome TEXT NOT NULL,
+                gols INTEGER DEFAULT 0,
+                passes INTEGER DEFAULT 0,
+                criado_em TEXT
+            )''')
+        conn.commit()
+    print("✅ DB OK")
+
+init_db()
 
 @app.route('/')
 def index():
     return send_file('scout_stats.html')
 
+# ── TIMES ──────────────────────────────────────────────────────
+@app.route('/api/times', methods=['GET'])
+def listar_times():
+    with get_db() as conn:
+        with conn.cursor() as c:
+            c.execute("SELECT * FROM times ORDER BY criado_em DESC")
+            times = [dict(r) for r in c.fetchall()]
+            for t in times:
+                c.execute("SELECT * FROM jogadores WHERE time_id=%s ORDER BY NULLIF(num,'—')::int NULLS LAST, nome", (t['id'],))
+                t['jogadores'] = [dict(j) for j in c.fetchall()]
+    return jsonify(times)
+
+@app.route('/api/times', methods=['POST'])
+def criar_time():
+    d = request.json
+    tid = str(uuid.uuid4())[:8]
+    with get_db() as conn:
+        with conn.cursor() as c:
+            c.execute("INSERT INTO times (id,nome,emoji,liga,jogos,criado_em) VALUES (%s,%s,%s,%s,%s,%s)",
+                (tid, d['nome'], d.get('emoji','⚽'), d.get('liga','lnf'), 0, datetime.now().isoformat()))
+        conn.commit()
+    return jsonify({"ok": True, "id": tid})
+
+@app.route('/api/times/<tid>', methods=['PUT'])
+def editar_time(tid):
+    d = request.json
+    with get_db() as conn:
+        with conn.cursor() as c:
+            if 'jogos' in d:
+                c.execute("UPDATE times SET jogos=%s WHERE id=%s", (d['jogos'], tid))
+            if 'nome' in d:
+                c.execute("UPDATE times SET nome=%s, emoji=%s, liga=%s WHERE id=%s",
+                    (d['nome'], d.get('emoji','⚽'), d.get('liga','lnf'), tid))
+        conn.commit()
+    return jsonify({"ok": True})
+
+@app.route('/api/times/<tid>', methods=['DELETE'])
+def deletar_time(tid):
+    with get_db() as conn:
+        with conn.cursor() as c:
+            c.execute("DELETE FROM times WHERE id=%s", (tid,))
+        conn.commit()
+    return jsonify({"ok": True})
+
+# ── JOGADORES ──────────────────────────────────────────────────
+@app.route('/api/times/<tid>/jogadores', methods=['POST'])
+def criar_jogador(tid):
+    d = request.json
+    jid = str(uuid.uuid4())[:8]
+    with get_db() as conn:
+        with conn.cursor() as c:
+            c.execute("INSERT INTO jogadores (id,time_id,num,nome,gols,passes,criado_em) VALUES (%s,%s,%s,%s,%s,%s,%s)",
+                (jid, tid, d.get('num','—'), d['nome'], d.get('gols',0), d.get('passes',0), datetime.now().isoformat()))
+        conn.commit()
+    return jsonify({"ok": True, "id": jid})
+
+@app.route('/api/jogadores/<jid>', methods=['PUT'])
+def editar_jogador(jid):
+    d = request.json
+    with get_db() as conn:
+        with conn.cursor() as c:
+            c.execute("UPDATE jogadores SET gols=%s, passes=%s WHERE id=%s",
+                (d['gols'], d['passes'], jid))
+        conn.commit()
+    return jsonify({"ok": True})
+
+@app.route('/api/jogadores/<jid>', methods=['DELETE'])
+def deletar_jogador(jid):
+    with get_db() as conn:
+        with conn.cursor() as c:
+            c.execute("DELETE FROM jogadores WHERE id=%s", (jid,))
+        conn.commit()
+    return jsonify({"ok": True})
+
+# ── BACKUP ────────────────────────────────────────────────────
+@app.route('/api/backup', methods=['GET'])
+def backup():
+    with get_db() as conn:
+        with conn.cursor() as c:
+            c.execute("SELECT * FROM times ORDER BY criado_em")
+            times = [dict(r) for r in c.fetchall()]
+            for t in times:
+                c.execute("SELECT * FROM jogadores WHERE time_id=%s", (t['id'],))
+                t['jogadores'] = [dict(j) for j in c.fetchall()]
+    return jsonify({"backup": datetime.now().isoformat(), "times": times})
+
+# ── MIGRAÇÃO (roda uma vez) ───────────────────────────────────
+@app.route('/api/migrar', methods=['POST'])
+def migrar():
+    dados = request.json  # array de times do localStorage
+    count_t = 0; count_j = 0
+    with get_db() as conn:
+        with conn.cursor() as c:
+            for t in dados:
+                tid = str(uuid.uuid4())[:8]
+                c.execute("INSERT INTO times (id,nome,emoji,liga,jogos,criado_em) VALUES (%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING",
+                    (tid, t['nome'], t.get('emoji','⚽'), t.get('liga','lnf'), t.get('jogos',0), datetime.now().isoformat()))
+                count_t += 1
+                for j in t.get('jogadores',[]):
+                    jid = str(uuid.uuid4())[:8]
+                    c.execute("INSERT INTO jogadores (id,time_id,num,nome,gols,passes,criado_em) VALUES (%s,%s,%s,%s,%s,%s,%s)",
+                        (jid, tid, j.get('num','—'), j['nome'], j.get('gols',0), j.get('passes',0), datetime.now().isoformat()))
+                    count_j += 1
+        conn.commit()
+    return jsonify({"ok": True, "times": count_t, "jogadores": count_j})
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 3000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=False)
