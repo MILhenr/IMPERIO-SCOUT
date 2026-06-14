@@ -19,7 +19,8 @@ def init_db():
                 emoji TEXT DEFAULT '⚽',
                 liga TEXT DEFAULT 'lnf',
                 jogos INTEGER DEFAULT 0,
-                criado_em TEXT
+                criado_em TEXT,
+                import_id TEXT
             )''')
             c.execute('''CREATE TABLE IF NOT EXISTS jogadores (
                 id TEXT PRIMARY KEY,
@@ -30,6 +31,8 @@ def init_db():
                 passes INTEGER DEFAULT 0,
                 criado_em TEXT
             )''')
+            # Adiciona coluna import_id se não existir (para bancos já criados)
+            c.execute('''ALTER TABLE times ADD COLUMN IF NOT EXISTS import_id TEXT''')
         conn.commit()
     print("✅ DB OK")
 
@@ -47,7 +50,6 @@ def listar_times():
             c.execute("SELECT * FROM times ORDER BY criado_em DESC")
             times = [dict(r) for r in c.fetchall()]
             for t in times:
-                # CORRIGIDO: ordenação simples por nome, sem tentar converter num para int
                 c.execute("SELECT * FROM jogadores WHERE time_id=%s ORDER BY nome", (t['id'],))
                 t['jogadores'] = [dict(j) for j in c.fetchall()]
     return jsonify(times)
@@ -58,8 +60,8 @@ def criar_time():
     tid = str(uuid.uuid4())[:8]
     with get_db() as conn:
         with conn.cursor() as c:
-            c.execute("INSERT INTO times (id,nome,emoji,liga,jogos,criado_em) VALUES (%s,%s,%s,%s,%s,%s)",
-                (tid, d['nome'], d.get('emoji','⚽'), d.get('liga','lnf'), 0, datetime.now().isoformat()))
+            c.execute("INSERT INTO times (id,nome,emoji,liga,jogos,criado_em,import_id) VALUES (%s,%s,%s,%s,%s,%s,%s)",
+                (tid, d['nome'], d.get('emoji','⚽'), d.get('liga','lnf'), 0, datetime.now().isoformat(), None))
         conn.commit()
     return jsonify({"ok": True, "id": tid})
 
@@ -131,12 +133,13 @@ def backup():
 def migrar():
     dados = request.json
     count_t = 0; count_j = 0
+    import_id = str(uuid.uuid4())[:8]
     with get_db() as conn:
         with conn.cursor() as c:
             for t in dados:
                 tid = str(uuid.uuid4())[:8]
-                c.execute("INSERT INTO times (id,nome,emoji,liga,jogos,criado_em) VALUES (%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING",
-                    (tid, t['nome'], t.get('emoji','⚽'), t.get('liga','lnf'), t.get('jogos',0), datetime.now().isoformat()))
+                c.execute("INSERT INTO times (id,nome,emoji,liga,jogos,criado_em,import_id) VALUES (%s,%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING",
+                    (tid, t['nome'], t.get('emoji','⚽'), t.get('liga','lnf'), t.get('jogos',0), datetime.now().isoformat(), import_id))
                 count_t += 1
                 for j in t.get('jogadores',[]):
                     jid = str(uuid.uuid4())[:8]
@@ -144,7 +147,45 @@ def migrar():
                         (jid, tid, j.get('num','—'), j['nome'], j.get('gols',0), j.get('passes',0), datetime.now().isoformat()))
                     count_j += 1
         conn.commit()
-    return jsonify({"ok": True, "times": count_t, "jogadores": count_j})
+    return jsonify({"ok": True, "times": count_t, "jogadores": count_j, "import_id": import_id})
+
+# ── LISTAR IMPORTS ────────────────────────────────────────────
+@app.route('/api/imports', methods=['GET'])
+def listar_imports():
+    with get_db() as conn:
+        with conn.cursor() as c:
+            c.execute("""
+                SELECT import_id, COUNT(*) as total_times, MIN(criado_em) as criado_em
+                FROM times
+                WHERE import_id IS NOT NULL
+                GROUP BY import_id
+                ORDER BY criado_em DESC
+            """)
+            imports = [dict(r) for r in c.fetchall()]
+    return jsonify(imports)
+
+# ── APAGAR IMPORT ─────────────────────────────────────────────
+@app.route('/api/imports/<import_id>', methods=['DELETE'])
+def apagar_import(import_id):
+    with get_db() as conn:
+        with conn.cursor() as c:
+            c.execute("SELECT COUNT(*) as total FROM times WHERE import_id=%s", (import_id,))
+            total = c.fetchone()['total']
+            if total == 0:
+                return jsonify({"erro": "Import não encontrado"}), 404
+            c.execute("DELETE FROM times WHERE import_id=%s", (import_id,))
+        conn.commit()
+    return jsonify({"ok": True, "times_apagados": total})
+
+# ── APAGAR TUDO ───────────────────────────────────────────────
+@app.route('/api/apagar-tudo', methods=['DELETE'])
+def apagar_tudo():
+    with get_db() as conn:
+        with conn.cursor() as c:
+            c.execute("DELETE FROM jogadores")
+            c.execute("DELETE FROM times")
+        conn.commit()
+    return jsonify({"ok": True})
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 3000))
