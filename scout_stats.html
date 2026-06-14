@@ -245,14 +245,37 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16
 </div>
 
 <script>
-var times = JSON.parse(localStorage.getItem('scout_times')||'[]');
-// Migração: adiciona liga='lnf' para times antigos sem liga
-times.forEach(function(t){ if(!t.liga) t.liga='lnf'; });
+var times = [];
 var currentIdx = null;
 var currentTab = 'lnf';
 var csvJParsed = [], csvTParsed = [];
 
-function salvar(){ localStorage.setItem('scout_times', JSON.stringify(times)); }
+async function api(url, opts){
+  try{
+    var r = await fetch(url, Object.assign({headers:{'Content-Type':'application/json'}}, opts||{}));
+    return await r.json();
+  } catch(e){ toast('⚠️ Sem conexão'); return null; }
+}
+
+async function carregarTimes(){
+  var d = await api('/api/times');
+  if(d) times = d;
+  renderTimes();
+}
+
+async function migrarLocalStorage(){
+  var dados = localStorage.getItem('scout_times');
+  if(!dados) return;
+  var arr = JSON.parse(dados);
+  if(!arr || !arr.length) return;
+  if(!confirm('Encontrei '+arr.length+' time(s) no dispositivo. Migrar para o banco de dados agora?')) return;
+  var d = await api('/api/migrar', {method:'POST', body: JSON.stringify(arr)});
+  if(d && d.ok){
+    localStorage.removeItem('scout_times');
+    toast('✅ Migrado! '+d.times+' times e '+d.jogadores+' jogadores.');
+    await carregarTimes();
+  }
+}
 
 function toast(msg){
   var t=document.getElementById('toast');
@@ -271,7 +294,6 @@ document.querySelectorAll('.modal-overlay').forEach(function(el){
   el.addEventListener('click',function(e){ if(e.target===this) this.classList.remove('open'); });
 });
 
-// ── TABS ──────────────────────────────────────────────────────────────────────
 function switchTab(tab){
   currentTab=tab;
   ['lnf','base','outros'].forEach(function(t){
@@ -281,27 +303,26 @@ function switchTab(tab){
   renderTimes();
 }
 
-// ── SEARCH ────────────────────────────────────────────────────────────────────
 function doSearch(){
   var q=document.getElementById('search-input').value.toLowerCase().trim();
   renderTimes(q);
 }
 
-// ── TIMES ────────────────────────────────────────────────────────────────────
-function criarTime(){
+async function criarTime(){
   var nome=document.getElementById('new-team-name').value.trim();
   var emoji=document.getElementById('new-team-emoji').value.trim()||'⚽';
   var liga=document.getElementById('new-team-liga').value;
   if(!nome){ toast('⚠️ Digite o nome'); return; }
-  times.push({nome:nome,emoji:emoji,liga:liga,jogos:0,jogadores:[]});
-  salvar(); fecharModal('modalTime');
+  await api('/api/times',{method:'POST',body:JSON.stringify({nome,emoji,liga})});
+  fecharModal('modalTime');
   document.getElementById('new-team-name').value='';
   document.getElementById('new-team-emoji').value='';
   currentTab=liga;
   ['lnf','base','outros'].forEach(function(t){
     document.getElementById('tab-'+t).classList.toggle('active',t===liga);
   });
-  renderTimes(); toast('✅ '+nome+' criado!');
+  await carregarTimes();
+  toast('✅ '+nome+' criado!');
 }
 
 var ligaLabels={lnf:'LNF',base:'Base',outros:'Outros'};
@@ -310,40 +331,27 @@ var ligaBadge={lnf:'badge-lnf',base:'badge-base',outros:'badge-outros'};
 function renderTimes(q){
   q=q||'';
   var grid=document.getElementById('teams-grid');
-
-  // Update counts
   ['lnf','base','outros'].forEach(function(l){
     var c=times.filter(function(t){ return t.liga===l; }).length;
     document.getElementById('count-'+l).textContent=c;
   });
-
-  // Filter by tab + search
-  var lista=times.filter(function(t,i){
-    t._idx=i;
-    var matchLiga=t.liga===currentTab;
-    if(!q) return matchLiga;
-    var matchSearch=t.nome.toLowerCase().includes(q)||
-      t.jogadores.some(function(j){ return j.nome.toLowerCase().includes(q); });
-    return matchSearch; // search ignores tab
-  });
-
+  var lista;
   if(q){
-    // Search across all tabs
-    lista=times.map(function(t,i){ t._idx=i; return t; }).filter(function(t){
+    lista=times.filter(function(t){
       return t.nome.toLowerCase().includes(q)||
-        t.jogadores.some(function(j){ return j.nome.toLowerCase().includes(q); });
+        (t.jogadores||[]).some(function(j){ return j.nome.toLowerCase().includes(q); });
     });
+  } else {
+    lista=times.filter(function(t){ return t.liga===currentTab; });
   }
-
   if(!lista.length){
     grid.innerHTML='<div class="empty"><div class="empty-icon">'+(q?'🔍':'🏟')+'</div><div>'+(q?'Nenhum resultado para "'+q+'"':'Nenhum time nessa aba.<br>Clique em "+ Time" para adicionar!')+'</div></div>';
     return;
   }
-
   grid.innerHTML=lista.map(function(t){
     var i=times.indexOf(t);
-    var gols=t.jogadores.reduce(function(s,j){ return s+(j.gols||0); },0);
-    var passes=t.jogadores.reduce(function(s,j){ return s+(j.passes||0); },0);
+    var gols=(t.jogadores||[]).reduce(function(s,j){ return s+(j.gols||0); },0);
+    var passes=(t.jogadores||[]).reduce(function(s,j){ return s+(j.passes||0); },0);
     return '<div class="team-card" style="position:relative" onclick="abrirTime('+i+')">'
       +'<button onclick="event.stopPropagation();deletarTime('+i+')" style="position:absolute;top:8px;right:8px;background:rgba(239,68,68,.15);border:none;color:var(--red);border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;z-index:2">🗑</button>'
       +'<div><span class="team-liga-badge '+ligaBadge[t.liga]+'">'+ligaLabels[t.liga]+'</span></div>'
@@ -368,69 +376,96 @@ function abrirTime(idx){
 
 function voltarTimes(){ currentIdx=null; showPage('times'); renderTimes(); }
 
-function deletarTime(idx){
+async function deletarTime(idx){
   var t=times[idx];
-  if(!confirm('Apagar "'+t.nome+'" e todos os '+t.jogadores.length+' jogadores?')) return;
-  times.splice(idx,1);
-  salvar(); renderTimes();
+  if(!confirm('Apagar "'+t.nome+'" e todos os '+(t.jogadores||[]).length+' jogadores?')) return;
+  await api('/api/times/'+t.id,{method:'DELETE'});
+  await carregarTimes();
   toast('🗑 '+t.nome+' apagado!');
 }
 
-function deletarTimeAtual(){
+async function deletarTimeAtual(){
   var t=times[currentIdx];
-  if(!confirm('Apagar "'+t.nome+'" e todos os '+t.jogadores.length+' jogadores? Essa ação não pode ser desfeita!')) return;
-  times.splice(currentIdx,1);
-  salvar(); voltarTimes();
+  if(!confirm('Apagar "'+t.nome+'"? Essa ação não pode ser desfeita!')) return;
+  await api('/api/times/'+t.id,{method:'DELETE'});
+  voltarTimes();
+  await carregarTimes();
   toast('🗑 '+t.nome+' apagado!');
 }
 
-function addJogo(){
+async function addJogo(){
   var t=times[currentIdx]; t.jogos++;
   document.getElementById('th-jogos').textContent=t.jogos;
-  salvar(); toast('🏁 +1 jogo — '+t.nome+' ('+t.jogos+')');
+  await api('/api/times/'+t.id,{method:'PUT',body:JSON.stringify({jogos:t.jogos})});
+  toast('🏁 +1 jogo — '+t.nome+' ('+t.jogos+')');
 }
-function removeJogo(){
+
+async function removeJogo(){
   var t=times[currentIdx];
   if(t.jogos<=0){ toast('⚠️ Já está em 0'); return; }
   t.jogos--;
   document.getElementById('th-jogos').textContent=t.jogos;
-  salvar(); toast('↩️ -1 jogo ('+t.jogos+')');
+  await api('/api/times/'+t.id,{method:'PUT',body:JSON.stringify({jogos:t.jogos})});
+  toast('↩️ -1 jogo ('+t.jogos+')');
 }
 
-// ── JOGADORES ────────────────────────────────────────────────────────────────
-function addJogador(){
+async function addJogador(){
   var num=document.getElementById('new-num').value.trim();
   var nome=document.getElementById('new-nome').value.trim();
   if(!nome){ toast('⚠️ Digite o nome'); return; }
   var t=times[currentIdx];
-  if(num && t.jogadores.find(function(j){ return String(j.num)===String(num); })){
+  if(num && (t.jogadores||[]).find(function(j){ return String(j.num)===String(num); })){
     toast('⚠️ Número '+num+' já existe'); return;
   }
-  t.jogadores.push({num:num||'—',nome:nome,gols:0,passes:0});
-  t.jogadores.sort(function(a,b){ return parseInt(a.num)-parseInt(b.num); });
-  salvar();
+  await api('/api/times/'+t.id+'/jogadores',{method:'POST',body:JSON.stringify({num:num||'—',nome,gols:0,passes:0})});
   document.getElementById('new-num').value='';
   document.getElementById('new-nome').value='';
-  renderJogadores(); toast('✅ '+nome+' adicionado!');
+  await recarregarTime();
+  toast('✅ '+nome+' adicionado!');
 }
 
-function addGol(i){ var t=times[currentIdx]; t.jogadores[i].gols++; salvar(); renderJogadores(); toast('⚽ +1 gol — '+t.jogadores[i].nome); }
-function removeGol(i){ var t=times[currentIdx]; if(t.jogadores[i].gols<=0) return; t.jogadores[i].gols--; salvar(); renderJogadores(); }
-function addPasse(i){ var t=times[currentIdx]; t.jogadores[i].passes++; salvar(); renderJogadores(); toast('🅰️ +1 passe — '+t.jogadores[i].nome); }
-function removePasse(i){ var t=times[currentIdx]; if(t.jogadores[i].passes<=0) return; t.jogadores[i].passes--; salvar(); renderJogadores(); }
-function removerJogador(i){
-  var t=times[currentIdx];
-  if(!confirm('Remover '+t.jogadores[i].nome+'?')) return;
-  var nome=t.jogadores[i].nome;
-  t.jogadores.splice(i,1); salvar(); renderJogadores(); toast('🗑 '+nome+' removido');
+async function recarregarTime(){
+  var d = await api('/api/times');
+  if(d){ times=d; renderJogadores(); }
+}
+
+async function addGol(i){
+  var t=times[currentIdx]; var j=t.jogadores[i];
+  j.gols++; renderJogadores();
+  await api('/api/jogadores/'+j.id,{method:'PUT',body:JSON.stringify({gols:j.gols,passes:j.passes})});
+  toast('⚽ +1 gol — '+j.nome);
+}
+async function removeGol(i){
+  var t=times[currentIdx]; var j=t.jogadores[i];
+  if(j.gols<=0) return; j.gols--; renderJogadores();
+  await api('/api/jogadores/'+j.id,{method:'PUT',body:JSON.stringify({gols:j.gols,passes:j.passes})});
+}
+async function addPasse(i){
+  var t=times[currentIdx]; var j=t.jogadores[i];
+  j.passes++; renderJogadores();
+  await api('/api/jogadores/'+j.id,{method:'PUT',body:JSON.stringify({gols:j.gols,passes:j.passes})});
+  toast('🅰️ +1 passe — '+j.nome);
+}
+async function removePasse(i){
+  var t=times[currentIdx]; var j=t.jogadores[i];
+  if(j.passes<=0) return; j.passes--; renderJogadores();
+  await api('/api/jogadores/'+j.id,{method:'PUT',body:JSON.stringify({gols:j.gols,passes:j.passes})});
+}
+async function removerJogador(i){
+  var t=times[currentIdx]; var j=t.jogadores[i];
+  if(!confirm('Remover '+j.nome+'?')) return;
+  await api('/api/jogadores/'+j.id,{method:'DELETE'});
+  var nome=j.nome;
+  await recarregarTime();
+  toast('🗑 '+nome+' removido');
 }
 
 function renderJogadores(){
-  var t=times[currentIdx];
-  document.getElementById('th-sub').textContent=t.jogadores.length+' jogadores · '+ligaLabels[t.liga];
+  var t=times[currentIdx]; if(!t) return;
+  document.getElementById('th-sub').textContent=(t.jogadores||[]).length+' jogadores · '+ligaLabels[t.liga];
   document.getElementById('th-jogos').textContent=t.jogos;
   var tbody=document.getElementById('players-tbody');
-  if(!t.jogadores.length){
+  if(!(t.jogadores||[]).length){
     tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--muted)">Nenhum jogador. Adicione abaixo!</td></tr>';
     return;
   }
@@ -445,7 +480,6 @@ function renderJogadores(){
   }).join('');
 }
 
-// ── EXPORTAR ─────────────────────────────────────────────────────────────────
 function exportarTudo(){
   if(!times.length){ toast('⚠️ Nenhum time'); return; }
   var wb=XLSX.utils.book_new();
@@ -461,25 +495,22 @@ function exportarTudo(){
     if(color) s.font.color={rgb:color};
     c.s=s; return c;
   }
-  // Aba por time
   times.forEach(function(t){
     var data=[];
     data.push(['Nº','Jogador','Gols','Passes','Jogos'].map(function(h){ return {v:h,t:'s',s:{fill:hFill,font:hFont,alignment:hAlign,border:brd}}; }));
-    t.jogadores.forEach(function(j,i){
+    (t.jogadores||[]).forEach(function(j,i){
       var f=i%2===0?null:'EBF5FB';
       data.push([mc(j.num||'—',false,f),mc(j.nome,true,f),mc(j.gols||0,false,f,'1F78D1'),mc(j.passes||0,false,f,'1F78D1'),i===0?mc(t.jogos,true,f,'15803D'):mc('',false,f)]);
     });
-    if(!t.jogadores.length) data.push([mc('—'),mc('Sem jogadores'),mc(0),mc(0),mc(t.jogos)]);
+    if(!(t.jogadores||[]).length) data.push([mc('—'),mc('Sem jogadores'),mc(0),mc(0),mc(t.jogos)]);
     var ws=XLSX.utils.aoa_to_sheet(data);
     ws['!cols']=[{wch:6},{wch:22},{wch:8},{wch:8},{wch:10}];
     XLSX.utils.book_append_sheet(wb,ws,t.nome.substring(0,31).replace(/[:\\\/?*\[\]]/g,''));
   });
-  // Artilharia
-  var art=[];
-  art.push(['Pos','Jogador','Time','Liga','Gols','Passes'].map(function(h){ return {v:h,t:'s',s:{fill:{fgColor:{rgb:'7F1D1D'}},font:{bold:true,color:{rgb:'FFFFFF'},name:'Arial',sz:11},alignment:hAlign,border:brd}}; }));
   var todos=[];
-  times.forEach(function(t){ t.jogadores.forEach(function(j){ if((j.gols||0)>0) todos.push({nome:j.nome,time:t.nome,liga:ligaLabels[t.liga],gols:j.gols||0,passes:j.passes||0}); }); });
+  times.forEach(function(t){ (t.jogadores||[]).forEach(function(j){ if((j.gols||0)>0) todos.push({nome:j.nome,time:t.nome,liga:ligaLabels[t.liga],gols:j.gols||0,passes:j.passes||0}); }); });
   todos.sort(function(a,b){ return b.gols-a.gols; });
+  var art=[['Pos','Jogador','Time','Liga','Gols','Passes'].map(function(h){ return {v:h,t:'s',s:{fill:{fgColor:{rgb:'7F1D1D'}},font:{bold:true,color:{rgb:'FFFFFF'},name:'Arial',sz:11},alignment:hAlign,border:brd}}; })];
   todos.forEach(function(j,i){
     var f=i%2===0?null:'FEF2F2';
     var pos=i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'º';
@@ -489,12 +520,10 @@ function exportarTudo(){
   var wsArt=XLSX.utils.aoa_to_sheet(art);
   wsArt['!cols']=[{wch:6},{wch:22},{wch:18},{wch:8},{wch:8},{wch:8}];
   XLSX.utils.book_append_sheet(wb,wsArt,'🏆 Artilharia');
-  // Assistências
-  var ass=[];
-  ass.push(['Pos','Jogador','Time','Liga','Passes','Gols'].map(function(h){ return {v:h,t:'s',s:{fill:{fgColor:{rgb:'1A4F2D'}},font:{bold:true,color:{rgb:'FFFFFF'},name:'Arial',sz:11},alignment:hAlign,border:brd}}; }));
   var todos2=[];
-  times.forEach(function(t){ t.jogadores.forEach(function(j){ if((j.passes||0)>0) todos2.push({nome:j.nome,time:t.nome,liga:ligaLabels[t.liga],gols:j.gols||0,passes:j.passes||0}); }); });
+  times.forEach(function(t){ (t.jogadores||[]).forEach(function(j){ if((j.passes||0)>0) todos2.push({nome:j.nome,time:t.nome,liga:ligaLabels[t.liga],gols:j.gols||0,passes:j.passes||0}); }); });
   todos2.sort(function(a,b){ return b.passes-a.passes; });
+  var ass=[['Pos','Jogador','Time','Liga','Passes','Gols'].map(function(h){ return {v:h,t:'s',s:{fill:{fgColor:{rgb:'1A4F2D'}},font:{bold:true,color:{rgb:'FFFFFF'},name:'Arial',sz:11},alignment:hAlign,border:brd}}; })];
   todos2.forEach(function(j,i){
     var f=i%2===0?null:'F0FDF4';
     var pos=i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'º';
@@ -504,13 +533,11 @@ function exportarTudo(){
   var wsAss=XLSX.utils.aoa_to_sheet(ass);
   wsAss['!cols']=[{wch:6},{wch:22},{wch:18},{wch:8},{wch:8},{wch:8}];
   XLSX.utils.book_append_sheet(wb,wsAss,'🅰️ Assistências');
-  // Resumo Times
-  var rt=[];
-  rt.push(['Time','Liga','Jogos','Gols','Passes'].map(function(h){ return {v:h,t:'s',s:{fill:{fgColor:{rgb:'1F3D5C'}},font:{bold:true,color:{rgb:'FFFFFF'},name:'Arial',sz:11},alignment:hAlign,border:brd}}; }));
+  var rt=[['Time','Liga','Jogos','Gols','Passes'].map(function(h){ return {v:h,t:'s',s:{fill:{fgColor:{rgb:'1F3D5C'}},font:{bold:true,color:{rgb:'FFFFFF'},name:'Arial',sz:11},alignment:hAlign,border:brd}}; })];
   times.forEach(function(t,i){
     var f=i%2===0?null:'E8F4FD';
-    var g=t.jogadores.reduce(function(s,j){ return s+(j.gols||0); },0);
-    var p=t.jogadores.reduce(function(s,j){ return s+(j.passes||0); },0);
+    var g=(t.jogadores||[]).reduce(function(s,j){ return s+(j.gols||0); },0);
+    var p=(t.jogadores||[]).reduce(function(s,j){ return s+(j.passes||0); },0);
     rt.push([mc(t.emoji+' '+t.nome,true,f),mc(ligaLabels[t.liga],false,f),mc(t.jogos,false,f),mc(g,true,f,'1F78D1'),mc(p,false,f)]);
   });
   var wsRt=XLSX.utils.aoa_to_sheet(rt);
@@ -520,7 +547,6 @@ function exportarTudo(){
   toast('📊 Excel exportado!');
 }
 
-// ── IMPORTAR ─────────────────────────────────────────────────────────────────
 function abrirImport(){
   csvJParsed=[]; csvTParsed=[];
   document.getElementById('prev-j').style.display='none';
@@ -571,29 +597,29 @@ function processCSVFile(file,tipo){
       var arr=Object.values(map);
       document.getElementById('prev-t-title').textContent=arr.length+' time(s)';
       document.getElementById('prev-t-list').innerHTML=arr.map(function(t){
-        return '<div class="preview-item"><strong>'+t.emoji+' '+t.nome+'</strong><span>'+ligaLabels[t.liga]||t.liga+' · '+t.jogadores.length+' jog.</span></div>';
+        return '<div class="preview-item"><strong>'+t.emoji+' '+t.nome+'</strong><span>'+(ligaLabels[t.liga]||t.liga)+' · '+t.jogadores.length+' jog.</span></div>';
       }).join('');
       document.getElementById('prev-t').style.display='block';
     }
   };
   reader.readAsText(file);
 }
-function importarJogadores(){
+async function importarJogadores(){
   if(currentIdx===null){ toast('⚠️ Abra um time primeiro'); fecharModal('modalImport'); return; }
   if(!csvJParsed.length){ toast('⚠️ CSV vazio'); return; }
   var t=times[currentIdx]; var count=0;
-  csvJParsed.forEach(function(r){
-    var nome=r.nome||r.jogador; if(!nome) return;
+  for(var r of csvJParsed){
+    var nome=r.nome||r.jogador; if(!nome) continue;
     var num=r.n||r.numero||r.nm||'—';
-    if(t.jogadores.find(function(j){ return j.nome===nome; })) return;
-    t.jogadores.push({num:num,nome:nome,gols:parseInt(r.gols)||0,passes:parseInt(r.passes)||0});
+    if((t.jogadores||[]).find(function(j){ return j.nome===nome; })) continue;
+    await api('/api/times/'+t.id+'/jogadores',{method:'POST',body:JSON.stringify({num,nome,gols:parseInt(r.gols)||0,passes:parseInt(r.passes)||0})});
     count++;
-  });
-  t.jogadores.sort(function(a,b){ return parseInt(a.num)-parseInt(b.num); });
-  salvar(); renderJogadores(); fecharModal('modalImport');
+  }
+  await recarregarTime();
+  fecharModal('modalImport');
   toast('✅ '+count+' jogador(es) importado(s)!');
 }
-function importarTimes(){
+async function importarTimes(){
   if(!csvTParsed.length){ toast('⚠️ CSV vazio'); return; }
   var map={};
   csvTParsed.forEach(function(r){
@@ -602,19 +628,16 @@ function importarTimes(){
     var nj=r.jogador||r.nome_jogador||r.jogadores;
     if(nj) map[tn].jogadores.push({num:r.n||r.numero||'—',nome:nj,gols:parseInt(r.gols)||0,passes:parseInt(r.passes)||0});
   });
-  var count=0;
-  Object.values(map).forEach(function(t){
-    if(!times.find(function(x){ return x.nome===t.nome; })){ times.push(t); count++; }
-  });
-  salvar(); renderTimes(); fecharModal('modalImport');
-  toast('✅ '+count+' time(s) importado(s)!');
+  await api('/api/migrar',{method:'POST',body:JSON.stringify(Object.values(map))});
+  await carregarTimes();
+  fecharModal('modalImport');
+  toast('✅ Times importados!');
 }
 
-// ── ENTER ────────────────────────────────────────────────────────────────────
 document.getElementById('new-nome').addEventListener('keyup',function(e){ if(e.key==='Enter') addJogador(); });
 document.getElementById('new-team-name').addEventListener('keyup',function(e){ if(e.key==='Enter') criarTime(); });
 
-renderTimes();
+carregarTimes().then(function(){ migrarLocalStorage(); });
 </script>
 </body>
 </html>
