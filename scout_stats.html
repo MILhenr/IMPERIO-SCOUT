@@ -18,20 +18,14 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16
 .nav-right{display:flex;gap:6px;flex-shrink:0}
 .page{display:none;padding:16px;max-width:960px;margin:0 auto}
 .page.active{display:block}
-
-/* SEARCH BAR */
 .search-wrap{position:relative;margin-bottom:16px}
 .search-input{width:100%;background:var(--card);border:1.5px solid var(--border);color:var(--text);padding:11px 16px 11px 42px;border-radius:10px;font-size:14px;outline:none;transition:border-color .2s}
 .search-input:focus{border-color:var(--blue)}
 .search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none}
-
-/* TABS */
 .tabs{display:flex;gap:4px;background:var(--card);border-radius:10px;padding:4px;margin-bottom:16px;border:1.5px solid var(--border)}
 .tab{flex:1;padding:9px 8px;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:var(--muted);transition:all .2s;text-align:center}
 .tab.active{background:var(--blue);color:#fff}
 .tab-count{font-size:10px;background:rgba(255,255,255,.2);border-radius:100px;padding:1px 6px;margin-left:4px}
-
-/* TEAMS GRID */
 .teams-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
 .team-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:18px 14px;cursor:pointer;transition:all .2s;text-align:center;position:relative}
 .team-card:hover{border-color:var(--blue);transform:translateY(-2px)}
@@ -42,8 +36,6 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16
 .badge-lnf{background:rgba(59,130,246,.2);color:var(--blue)}
 .badge-base{background:rgba(34,197,94,.2);color:var(--green)}
 .badge-outros{background:rgba(100,116,139,.2);color:var(--light)}
-
-/* BUTTONS */
 .btn{border:none;border-radius:9px;font-weight:700;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
 .btn-blue{background:var(--blue);color:#fff;padding:10px 16px;font-size:13px}
 .btn-blue:hover{background:var(--blue2)}
@@ -51,10 +43,10 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16
 .btn-green:hover{background:var(--green);color:#fff}
 .btn-yellow{background:rgba(245,158,11,.15);border:1.5px solid var(--yellow);color:var(--yellow);padding:9px 14px;font-size:12px}
 .btn-yellow:hover{background:var(--yellow);color:#fff}
+.btn-red{background:rgba(239,68,68,.15);border:1.5px solid var(--red);color:var(--red);padding:9px 14px;font-size:12px}
+.btn-red:hover{background:var(--red);color:#fff}
 .btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--light);padding:8px 14px;font-size:13px}
 .btn-outline:hover{border-color:var(--blue);color:var(--blue)}
-
-/* TEAM PAGE */
 .team-header{background:linear-gradient(135deg,var(--blue) 0%,#1d4ed8 100%);border-radius:16px;padding:20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
 .team-header-left{display:flex;align-items:center;gap:14px}
 .team-header-emoji{font-size:44px}
@@ -84,8 +76,6 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16
 .add-player-row{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
 .input-s{background:var(--card);border:1.5px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-size:14px;outline:none;transition:border-color .2s}
 .input-s:focus{border-color:var(--blue)}
-
-/* MODALS */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:500;opacity:0;pointer-events:none;transition:opacity .2s;padding:16px}
 .modal-overlay.open{opacity:1;pointer-events:all}
 .modal{background:var(--surface);border:1.5px solid var(--border);border-radius:18px;padding:28px;width:100%;max-width:460px;transform:scale(.95);transition:transform .2s;max-height:90vh;overflow-y:auto}
@@ -96,6 +86,8 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16
 .select-full{background:var(--card);border:1.5px solid var(--border);color:var(--text);padding:11px 13px;border-radius:9px;font-size:14px;outline:none;width:100%;margin-bottom:10px;cursor:pointer}
 .btn-primary{background:var(--blue);border:none;color:#fff;padding:13px;border-radius:9px;font-size:14px;font-weight:800;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;width:100%;margin-bottom:8px}
 .btn-primary:hover{background:var(--blue2)}
+.btn-danger{background:var(--red);border:none;color:#fff;padding:13px;border-radius:9px;font-size:14px;font-weight:800;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;width:100%;margin-bottom:8px}
+.btn-danger:hover{background:#dc2626}
 .btn-cancel{background:transparent;border:1.5px solid var(--border);color:var(--muted);padding:11px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;width:100%}
 .toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1.5px solid var(--border);color:var(--text);padding:12px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:9000;transform:translateY(8px);opacity:0;transition:all .3s;pointer-events:none;max-width:280px}
 .toast.show{transform:translateY(0);opacity:1}
@@ -109,7 +101,12 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16
 .import-tabs{display:flex;gap:4px;background:var(--card);border-radius:8px;padding:3px;margin-bottom:16px}
 .import-tab{flex:1;padding:7px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:var(--muted);transition:all .2s}
 .import-tab.active{background:var(--blue);color:#fff}
-
+/* Import item */
+.import-item{background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.import-item-info{font-size:13px}
+.import-item-id{font-size:10px;color:var(--muted);margin-top:2px;font-family:monospace}
+.import-item-apagar{background:rgba(239,68,68,.15);border:1.5px solid var(--red);color:var(--red);border-radius:7px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.import-item-apagar:hover{background:var(--red);color:#fff}
 @media(max-width:500px){
   .nav-right .btn span{display:none}
   .players-table th:last-child,.players-table td:last-child{display:none}
@@ -157,7 +154,7 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16
       </div>
     </div>
     <div id="import-t" style="display:none">
-      <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Modelo: <code style="background:var(--card);padding:2px 6px;border-radius:4px">Time,Emoji,Liga,Jogos,Nº,Nome,Gols,Passes</code></p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Modelo: <code style="background:var(--card);padding:2px 6px;border-radius:4px">Time,Emoji,Liga,Jogos,Nº,Jogador,Gols,Passes</code></p>
       <div class="drop-zone" id="dz-t" onclick="document.getElementById('file-t').click()" ondragover="dzOver(event,'dz-t')" ondragleave="dzLeave('dz-t')" ondrop="dzDrop(event,'t')">
         <div style="font-size:28px;margin-bottom:6px">📊</div>
         <div style="font-size:13px;font-weight:600;color:var(--light)">Arraste o CSV ou clique</div>
@@ -173,11 +170,27 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16
   </div>
 </div>
 
+<!-- MODAL: GERENCIAR IMPORTS -->
+<div class="modal-overlay" id="modalImports">
+  <div class="modal">
+    <div class="modal-title">🗂 Gerenciar Imports</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Cada linha abaixo é um lote de import. Você pode apagar um lote inteiro sem afetar os outros times.</p>
+    <div id="imports-lista">
+      <div style="text-align:center;color:var(--muted);padding:20px">Carregando...</div>
+    </div>
+    <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px">
+      <button class="btn-danger" onclick="apagarTudo()">🗑 APAGAR TUDO DO BANCO</button>
+    </div>
+    <button class="btn-cancel" style="margin-top:8px" onclick="fecharModal('modalImports')">Fechar</button>
+  </div>
+</div>
+
 <!-- NAV -->
 <nav>
   <div class="logo">⚽ SCOUT</div>
   <div class="nav-right">
     <button class="btn btn-yellow" onclick="exportarTudo()">📊 <span>Exportar</span></button>
+    <button class="btn btn-red" onclick="abrirImports()">🗂 <span>Imports</span></button>
     <button class="btn btn-green" onclick="abrirImport()">📥 <span>Importar</span></button>
     <button class="btn btn-blue" onclick="abrirModal('modalTime')">+ <span>Time</span></button>
   </div>
@@ -185,19 +198,15 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16
 
 <!-- PAGE: TIMES -->
 <div id="page-times" class="page active">
-  <!-- SEARCH -->
   <div class="search-wrap">
     <span class="search-icon">🔍</span>
     <input class="search-input" id="search-input" placeholder="Buscar time ou jogador..." oninput="doSearch()">
   </div>
-
-  <!-- TABS -->
   <div class="tabs">
     <button class="tab active" id="tab-lnf" onclick="switchTab('lnf')">🏆 LNF <span class="tab-count" id="count-lnf">0</span></button>
     <button class="tab" id="tab-base" onclick="switchTab('base')">🌱 Base <span class="tab-count" id="count-base">0</span></button>
     <button class="tab" id="tab-outros" onclick="switchTab('outros')">📋 Outros <span class="tab-count" id="count-outros">0</span></button>
   </div>
-
   <div class="teams-grid" id="teams-grid"></div>
 </div>
 
@@ -222,7 +231,6 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16
       <button class="btn-jogo" style="background:rgba(239,68,68,.25);border-color:rgba(239,68,68,.5)" onclick="deletarTimeAtual()">🗑 Apagar Time</button>
     </div>
   </div>
-
   <div class="section-title">Jogadores</div>
   <table class="players-table">
     <thead>
@@ -236,7 +244,6 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16
     </thead>
     <tbody id="players-tbody"></tbody>
   </table>
-
   <div class="add-player-row">
     <input class="input-s" id="new-num" placeholder="Nº" type="number" min="1" max="99" style="width:60px">
     <input class="input-s" id="new-nome" placeholder="Nome do jogador" style="flex:1;min-width:140px">
@@ -261,20 +268,6 @@ async function carregarTimes(){
   var d = await api('/api/times');
   if(d) times = d;
   renderTimes();
-}
-
-async function migrarLocalStorage(){
-  var dados = localStorage.getItem('scout_times');
-  if(!dados) return;
-  var arr = JSON.parse(dados);
-  if(!arr || !arr.length) return;
-  if(!confirm('Encontrei '+arr.length+' time(s) no dispositivo. Migrar para o banco de dados agora?')) return;
-  var d = await api('/api/migrar', {method:'POST', body: JSON.stringify(arr)});
-  if(d && d.ok){
-    localStorage.removeItem('scout_times');
-    toast('✅ Migrado! '+d.times+' times e '+d.jogadores+' jogadores.');
-    await carregarTimes();
-  }
 }
 
 function toast(msg){
@@ -414,9 +407,6 @@ async function addJogador(){
   var nome=document.getElementById('new-nome').value.trim();
   if(!nome){ toast('⚠️ Digite o nome'); return; }
   var t=times[currentIdx];
-  if(num && (t.jogadores||[]).find(function(j){ return String(j.num)===String(num); })){
-    toast('⚠️ Número '+num+' já existe'); return;
-  }
   await api('/api/times/'+t.id+'/jogadores',{method:'POST',body:JSON.stringify({num:num||'—',nome,gols:0,passes:0})});
   document.getElementById('new-num').value='';
   document.getElementById('new-nome').value='';
@@ -480,73 +470,50 @@ function renderJogadores(){
   }).join('');
 }
 
-function exportarTudo(){
-  if(!times.length){ toast('⚠️ Nenhum time'); return; }
-  var wb=XLSX.utils.book_new();
-  var hFill={fgColor:{rgb:'1F4E79'}};
-  var hFont={bold:true,color:{rgb:'FFFFFF'},name:'Arial',sz:11};
-  var hAlign={horizontal:'center',vertical:'center'};
-  var brd={top:{style:'thin',color:{rgb:'CCCCCC'}},bottom:{style:'thin',color:{rgb:'CCCCCC'}},left:{style:'thin',color:{rgb:'CCCCCC'}},right:{style:'thin',color:{rgb:'CCCCCC'}}};
-  function mc(v,bold,fillRgb,color){
-    var c={v:v,t:typeof v==='number'?'n':'s'};
-    var s={border:brd,alignment:{horizontal:'center',vertical:'center'},font:{name:'Arial',sz:10}};
-    if(bold) s.font.bold=true;
-    if(fillRgb) s.fill={fgColor:{rgb:fillRgb}};
-    if(color) s.font.color={rgb:color};
-    c.s=s; return c;
+// ── GERENCIAR IMPORTS ─────────────────────────────────────────
+async function abrirImports(){
+  abrirModal('modalImports');
+  var lista = document.getElementById('imports-lista');
+  lista.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px">Carregando...</div>';
+  var imports = await api('/api/imports');
+  if(!imports || !imports.length){
+    lista.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px">Nenhum import registrado.</div>';
+    return;
   }
-  times.forEach(function(t){
-    var data=[];
-    data.push(['Nº','Jogador','Gols','Passes','Jogos'].map(function(h){ return {v:h,t:'s',s:{fill:hFill,font:hFont,alignment:hAlign,border:brd}}; }));
-    (t.jogadores||[]).forEach(function(j,i){
-      var f=i%2===0?null:'EBF5FB';
-      data.push([mc(j.num||'—',false,f),mc(j.nome,true,f),mc(j.gols||0,false,f,'1F78D1'),mc(j.passes||0,false,f,'1F78D1'),i===0?mc(t.jogos,true,f,'15803D'):mc('',false,f)]);
-    });
-    if(!(t.jogadores||[]).length) data.push([mc('—'),mc('Sem jogadores'),mc(0),mc(0),mc(t.jogos)]);
-    var ws=XLSX.utils.aoa_to_sheet(data);
-    ws['!cols']=[{wch:6},{wch:22},{wch:8},{wch:8},{wch:10}];
-    XLSX.utils.book_append_sheet(wb,ws,t.nome.substring(0,31).replace(/[:\\\/?*\[\]]/g,''));
-  });
-  var todos=[];
-  times.forEach(function(t){ (t.jogadores||[]).forEach(function(j){ if((j.gols||0)>0) todos.push({nome:j.nome,time:t.nome,liga:ligaLabels[t.liga],gols:j.gols||0,passes:j.passes||0}); }); });
-  todos.sort(function(a,b){ return b.gols-a.gols; });
-  var art=[['Pos','Jogador','Time','Liga','Gols','Passes'].map(function(h){ return {v:h,t:'s',s:{fill:{fgColor:{rgb:'7F1D1D'}},font:{bold:true,color:{rgb:'FFFFFF'},name:'Arial',sz:11},alignment:hAlign,border:brd}}; })];
-  todos.forEach(function(j,i){
-    var f=i%2===0?null:'FEF2F2';
-    var pos=i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'º';
-    art.push([mc(pos,i<3,f),mc(j.nome,true,f),mc(j.time,false,f),mc(j.liga,false,f),mc(j.gols,true,f,'991B1B'),mc(j.passes,false,f)]);
-  });
-  if(!todos.length) art.push([mc('—'),mc('Nenhum gol'),mc(''),mc(''),mc(0),mc(0)]);
-  var wsArt=XLSX.utils.aoa_to_sheet(art);
-  wsArt['!cols']=[{wch:6},{wch:22},{wch:18},{wch:8},{wch:8},{wch:8}];
-  XLSX.utils.book_append_sheet(wb,wsArt,'🏆 Artilharia');
-  var todos2=[];
-  times.forEach(function(t){ (t.jogadores||[]).forEach(function(j){ if((j.passes||0)>0) todos2.push({nome:j.nome,time:t.nome,liga:ligaLabels[t.liga],gols:j.gols||0,passes:j.passes||0}); }); });
-  todos2.sort(function(a,b){ return b.passes-a.passes; });
-  var ass=[['Pos','Jogador','Time','Liga','Passes','Gols'].map(function(h){ return {v:h,t:'s',s:{fill:{fgColor:{rgb:'1A4F2D'}},font:{bold:true,color:{rgb:'FFFFFF'},name:'Arial',sz:11},alignment:hAlign,border:brd}}; })];
-  todos2.forEach(function(j,i){
-    var f=i%2===0?null:'F0FDF4';
-    var pos=i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'º';
-    ass.push([mc(pos,i<3,f),mc(j.nome,true,f),mc(j.time,false,f),mc(j.liga,false,f),mc(j.passes,true,f,'15803D'),mc(j.gols,false,f)]);
-  });
-  if(!todos2.length) ass.push([mc('—'),mc('Nenhum passe'),mc(''),mc(''),mc(0),mc(0)]);
-  var wsAss=XLSX.utils.aoa_to_sheet(ass);
-  wsAss['!cols']=[{wch:6},{wch:22},{wch:18},{wch:8},{wch:8},{wch:8}];
-  XLSX.utils.book_append_sheet(wb,wsAss,'🅰️ Assistências');
-  var rt=[['Time','Liga','Jogos','Gols','Passes'].map(function(h){ return {v:h,t:'s',s:{fill:{fgColor:{rgb:'1F3D5C'}},font:{bold:true,color:{rgb:'FFFFFF'},name:'Arial',sz:11},alignment:hAlign,border:brd}}; })];
-  times.forEach(function(t,i){
-    var f=i%2===0?null:'E8F4FD';
-    var g=(t.jogadores||[]).reduce(function(s,j){ return s+(j.gols||0); },0);
-    var p=(t.jogadores||[]).reduce(function(s,j){ return s+(j.passes||0); },0);
-    rt.push([mc(t.emoji+' '+t.nome,true,f),mc(ligaLabels[t.liga],false,f),mc(t.jogos,false,f),mc(g,true,f,'1F78D1'),mc(p,false,f)]);
-  });
-  var wsRt=XLSX.utils.aoa_to_sheet(rt);
-  wsRt['!cols']=[{wch:22},{wch:8},{wch:8},{wch:10},{wch:10}];
-  XLSX.utils.book_append_sheet(wb,wsRt,'📊 Resumo Times');
-  XLSX.writeFile(wb,'scout_stats.xlsx');
-  toast('📊 Excel exportado!');
+  lista.innerHTML = imports.map(function(imp){
+    var data = imp.criado_em ? imp.criado_em.substring(0,16).replace('T',' ') : '—';
+    return '<div class="import-item">'
+      +'<div class="import-item-info">'
+      +'<strong>'+imp.total_times+' times importados</strong>'
+      +'<div class="import-item-id">'+data+' · ID: '+imp.import_id+'</div>'
+      +'</div>'
+      +'<button class="import-item-apagar" onclick="apagarImport(\''+imp.import_id+'\','+imp.total_times+')">🗑 Apagar</button>'
+      +'</div>';
+  }).join('');
 }
 
+async function apagarImport(import_id, total){
+  if(!confirm('Apagar esse lote de '+total+' times? Os jogadores deles também serão removidos.')) return;
+  var r = await api('/api/imports/'+import_id, {method:'DELETE'});
+  if(r && r.ok){
+    toast('✅ '+r.times_apagados+' times apagados!');
+    await carregarTimes();
+    await abrirImports();
+  }
+}
+
+async function apagarTudo(){
+  if(!confirm('⚠️ APAGAR TUDO? Times e jogadores serão removidos permanentemente!')) return;
+  if(!confirm('Tem certeza absoluta? Isso não pode ser desfeito!')) return;
+  var r = await api('/api/apagar-tudo', {method:'DELETE'});
+  if(r && r.ok){
+    toast('🗑 Banco limpo!');
+    fecharModal('modalImports');
+    await carregarTimes();
+  }
+}
+
+// ── IMPORTAR ──────────────────────────────────────────────────
 function abrirImport(){
   csvJParsed=[]; csvTParsed=[];
   document.getElementById('prev-j').style.display='none';
@@ -592,7 +559,7 @@ function processCSVFile(file,tipo){
         var tn=r.time||r.nome; if(!tn) return;
         if(!map[tn]) map[tn]={nome:tn,emoji:r.emoji||'⚽',liga:(r.liga||'lnf').toLowerCase(),jogos:parseInt(r.jogos)||0,jogadores:[]};
         var nj=r.jogador||r.nome_jogador||r.jogadores||r.nmjogador;
-        if(nj) map[tn].jogadores.push({num:r.n||r.numero||'—',nome:nj,gols:parseInt(r.gols)||0,passes:parseInt(r.passes)||0});
+        if(nj) map[tn].jogadores.push({num:r.n||r.numero||r.nm||'—',nome:nj,gols:parseInt(r.gols)||0,passes:parseInt(r.passes)||0});
       });
       var arr=Object.values(map);
       document.getElementById('prev-t-title').textContent=arr.length+' time(s)';
@@ -626,18 +593,73 @@ async function importarTimes(){
     var tn=r.time||r.nome; if(!tn) return;
     if(!map[tn]) map[tn]={nome:tn,emoji:r.emoji||'⚽',liga:(r.liga||'lnf').toLowerCase(),jogos:parseInt(r.jogos)||0,jogadores:[]};
     var nj=r.jogador||r.nome_jogador||r.jogadores;
-    if(nj) map[tn].jogadores.push({num:r.n||r.numero||'—',nome:nj,gols:parseInt(r.gols)||0,passes:parseInt(r.passes)||0});
+    if(nj) map[tn].jogadores.push({num:r.n||r.numero||r.nm||'—',nome:nj,gols:parseInt(r.gols)||0,passes:parseInt(r.passes)||0});
   });
-  await api('/api/migrar',{method:'POST',body:JSON.stringify(Object.values(map))});
+  var r = await api('/api/migrar',{method:'POST',body:JSON.stringify(Object.values(map))});
   await carregarTimes();
   fecharModal('modalImport');
-  toast('✅ Times importados!');
+  if(r && r.ok) toast('✅ '+r.times+' times · '+r.jogadores+' jogadores importados!');
+}
+
+// ── EXPORTAR ──────────────────────────────────────────────────
+function exportarTudo(){
+  if(!times.length){ toast('⚠️ Nenhum time'); return; }
+  var wb=XLSX.utils.book_new();
+  var hFill={fgColor:{rgb:'1F4E79'}};
+  var hFont={bold:true,color:{rgb:'FFFFFF'},name:'Arial',sz:11};
+  var hAlign={horizontal:'center',vertical:'center'};
+  var brd={top:{style:'thin',color:{rgb:'CCCCCC'}},bottom:{style:'thin',color:{rgb:'CCCCCC'}},left:{style:'thin',color:{rgb:'CCCCCC'}},right:{style:'thin',color:{rgb:'CCCCCC'}}};
+  function mc(v,bold,fillRgb,color){
+    var c={v:v,t:typeof v==='number'?'n':'s'};
+    var s={border:brd,alignment:{horizontal:'center',vertical:'center'},font:{name:'Arial',sz:10}};
+    if(bold) s.font.bold=true;
+    if(fillRgb) s.fill={fgColor:{rgb:fillRgb}};
+    if(color) s.font.color={rgb:color};
+    c.s=s; return c;
+  }
+  times.forEach(function(t){
+    var data=[];
+    data.push(['Nº','Jogador','Gols','Passes','Jogos'].map(function(h){ return {v:h,t:'s',s:{fill:hFill,font:hFont,alignment:hAlign,border:brd}}; }));
+    (t.jogadores||[]).forEach(function(j,i){
+      var f=i%2===0?null:'EBF5FB';
+      data.push([mc(j.num||'—',false,f),mc(j.nome,true,f),mc(j.gols||0,false,f,'1F78D1'),mc(j.passes||0,false,f,'1F78D1'),i===0?mc(t.jogos,true,f,'15803D'):mc('',false,f)]);
+    });
+    if(!(t.jogadores||[]).length) data.push([mc('—'),mc('Sem jogadores'),mc(0),mc(0),mc(t.jogos)]);
+    var ws=XLSX.utils.aoa_to_sheet(data);
+    ws['!cols']=[{wch:6},{wch:22},{wch:8},{wch:8},{wch:10}];
+    XLSX.utils.book_append_sheet(wb,ws,t.nome.substring(0,31).replace(/[:\\\/?*\[\]]/g,''));
+  });
+  var todos=[];
+  times.forEach(function(t){ (t.jogadores||[]).forEach(function(j){ if((j.gols||0)>0) todos.push({nome:j.nome,time:t.nome,liga:ligaLabels[t.liga],gols:j.gols||0,passes:j.passes||0}); }); });
+  todos.sort(function(a,b){ return b.gols-a.gols; });
+  var art=[['Pos','Jogador','Time','Liga','Gols','Passes'].map(function(h){ return {v:h,t:'s',s:{fill:{fgColor:{rgb:'7F1D1D'}},font:{bold:true,color:{rgb:'FFFFFF'},name:'Arial',sz:11},alignment:hAlign,border:brd}}; })];
+  todos.forEach(function(j,i){
+    var f=i%2===0?null:'FEF2F2';
+    var pos=i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'º';
+    art.push([mc(pos,i<3,f),mc(j.nome,true,f),mc(j.time,false,f),mc(j.liga,false,f),mc(j.gols,true,f,'991B1B'),mc(j.passes,false,f)]);
+  });
+  if(!todos.length) art.push([mc('—'),mc('Nenhum gol'),mc(''),mc(''),mc(0),mc(0)]);
+  var wsArt=XLSX.utils.aoa_to_sheet(art);
+  wsArt['!cols']=[{wch:6},{wch:22},{wch:18},{wch:8},{wch:8},{wch:8}];
+  XLSX.utils.book_append_sheet(wb,wsArt,'🏆 Artilharia');
+  var rt=[['Time','Liga','Jogos','Gols','Passes'].map(function(h){ return {v:h,t:'s',s:{fill:{fgColor:{rgb:'1F3D5C'}},font:{bold:true,color:{rgb:'FFFFFF'},name:'Arial',sz:11},alignment:hAlign,border:brd}}; })];
+  times.forEach(function(t,i){
+    var f=i%2===0?null:'E8F4FD';
+    var g=(t.jogadores||[]).reduce(function(s,j){ return s+(j.gols||0); },0);
+    var p=(t.jogadores||[]).reduce(function(s,j){ return s+(j.passes||0); },0);
+    rt.push([mc(t.emoji+' '+t.nome,true,f),mc(ligaLabels[t.liga],false,f),mc(t.jogos,false,f),mc(g,true,f,'1F78D1'),mc(p,false,f)]);
+  });
+  var wsRt=XLSX.utils.aoa_to_sheet(rt);
+  wsRt['!cols']=[{wch:22},{wch:8},{wch:8},{wch:10},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,wsRt,'📊 Resumo Times');
+  XLSX.writeFile(wb,'scout_stats.xlsx');
+  toast('📊 Excel exportado!');
 }
 
 document.getElementById('new-nome').addEventListener('keyup',function(e){ if(e.key==='Enter') addJogador(); });
 document.getElementById('new-team-name').addEventListener('keyup',function(e){ if(e.key==='Enter') criarTime(); });
 
-carregarTimes().then(function(){ migrarLocalStorage(); });
+carregarTimes();
 </script>
 </body>
 </html>
