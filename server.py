@@ -47,7 +47,8 @@ def listar_times():
             c.execute("SELECT * FROM times ORDER BY criado_em DESC")
             times = [dict(r) for r in c.fetchall()]
             for t in times:
-                c.execute("SELECT * FROM jogadores WHERE time_id=%s ORDER BY NULLIF(num,'—')::int NULLS LAST, nome", (t['id'],))
+                # CORRIGIDO: ordenação simples por nome, sem tentar converter num para int
+                c.execute("SELECT * FROM jogadores WHERE time_id=%s ORDER BY nome", (t['id'],))
                 t['jogadores'] = [dict(j) for j in c.fetchall()]
     return jsonify(times)
 
@@ -125,10 +126,10 @@ def backup():
                 t['jogadores'] = [dict(j) for j in c.fetchall()]
     return jsonify({"backup": datetime.now().isoformat(), "times": times})
 
-# ── MIGRAÇÃO (roda uma vez) ───────────────────────────────────
+# ── MIGRAÇÃO ─────────────────────────────────────────────────
 @app.route('/api/migrar', methods=['POST'])
 def migrar():
-    dados = request.json  # array de times do localStorage
+    dados = request.json
     count_t = 0; count_j = 0
     with get_db() as conn:
         with conn.cursor() as c:
