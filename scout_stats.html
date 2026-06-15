@@ -423,11 +423,13 @@ async function addGol(i){
   var t=times[currentIdx]; var j=t.jogadores[i];
   j.gols++; renderJogadores();
   var primeiro = (j.gols + j.passes) === 1;
-  await api('/api/jogadores/'+j.id,{method:'PUT',body:JSON.stringify({gols:j.gols,passes:j.passes})});
-  if(primeiro){
+  var res = await api('/api/jogadores/'+j.id,{method:'PUT',body:JSON.stringify({gols:j.gols,passes:j.passes})});
+  if(primeiro && res && res.sync && res.sync.ok){
     toast('✅ '+j.nome+' importado para Análise.io!');
-  } else {
+  } else if(res && res.sync && res.sync.ok){
     toast('⚽ +1 gol — '+j.nome+' · Análise.io atualizado');
+  } else {
+    toast('⚽ +1 gol — '+j.nome);
   }
 }
 
@@ -439,9 +441,17 @@ async function removeGol(i){
 async function addPasse(i){
   var t=times[currentIdx]; var j=t.jogadores[i];
   j.passes++; renderJogadores();
-  await api('/api/jogadores/'+j.id,{method:'PUT',body:JSON.stringify({gols:j.gols,passes:j.passes})});
-  toast('🅰️ +1 passe — '+j.nome);
+  var primeiro = (j.gols + j.passes) === 1;
+  var res = await api('/api/jogadores/'+j.id,{method:'PUT',body:JSON.stringify({gols:j.gols,passes:j.passes})});
+  if(primeiro && res && res.sync && res.sync.ok){
+    toast('✅ '+j.nome+' importado para Análise.io!');
+  } else if(res && res.sync && res.sync.ok){
+    toast('🅰️ +1 passe — '+j.nome+' · Análise.io atualizado');
+  } else {
+    toast('🅰️ +1 passe — '+j.nome);
+  }
 }
+
 async function removePasse(i){
   var t=times[currentIdx]; var j=t.jogadores[i];
   if(j.passes<=0) return; j.passes--; renderJogadores();
