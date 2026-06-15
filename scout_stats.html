@@ -422,9 +422,15 @@ async function recarregarTime(){
 async function addGol(i){
   var t=times[currentIdx]; var j=t.jogadores[i];
   j.gols++; renderJogadores();
+  var primeiro = (j.gols + j.passes) === 1;
   await api('/api/jogadores/'+j.id,{method:'PUT',body:JSON.stringify({gols:j.gols,passes:j.passes})});
-  toast('⚽ +1 gol — '+j.nome);
+  if(primeiro){
+    toast('✅ '+j.nome+' importado para Análise.io!');
+  } else {
+    toast('⚽ +1 gol — '+j.nome+' · Análise.io atualizado');
+  }
 }
+
 async function removeGol(i){
   var t=times[currentIdx]; var j=t.jogadores[i];
   if(j.gols<=0) return; j.gols--; renderJogadores();
