@@ -43,11 +43,12 @@ init_db()
 
 def sync_analise(jogador, time):
     if not ANALISE_URL:
-        return
+        return {"ok": False, "motivo": "sem_url"}
     gols = jogador.get("gols", 0)
     passes = jogador.get("passes", 0)
     if gols == 0 and passes == 0:
-        return
+        return {"ok": False, "motivo": "sem_stats"}
+
     cat = LIGA_PARA_CAT.get(time.get("liga", ""), "Outros")
     comp = time.get("nome", "")
     clube = time.get("nome", "")
@@ -75,6 +76,7 @@ def sync_analise(jogador, time):
         req = urllib.request.Request(busca_url, headers={"X-Bot-Secret": ANALISE_BOT_SECRET})
         with urllib.request.urlopen(req, timeout=8) as r:
             encontrados = json.loads(r.read())
+
         if encontrados:
             aid = encontrados[0]["id"]
             update_payload = {
@@ -103,6 +105,7 @@ def sync_analise(jogador, time):
                 method="PUT"
             )
             urllib.request.urlopen(req2, timeout=8)
+            return {"ok": True, "acao": "atualizado"}
         else:
             req2 = urllib.request.Request(
                 f"{ANALISE_URL}/api/sync/atleta",
@@ -111,8 +114,11 @@ def sync_analise(jogador, time):
                 method="POST"
             )
             urllib.request.urlopen(req2, timeout=8)
+            return {"ok": True, "acao": "criado"}
+
     except Exception as e:
         print(f"⚠️ Sync Analise.io falhou: {e}")
+        return {"ok": False, "motivo": str(e)}
 
 
 @app.route('/')
@@ -187,11 +193,12 @@ def editar_jogador(jid):
             c.execute("SELECT * FROM times WHERE id=%s", (jogador['time_id'],))
             time = dict(c.fetchone())
         conn.commit()
+    resultado = {"ok": False}
     try:
-        sync_analise(jogador, time)
+        resultado = sync_analise(jogador, time)
     except Exception as e:
         print(f"⚠️ Sync error: {e}")
-    return jsonify({"ok": True})
+    return jsonify({"ok": True, "sync": resultado})
 
 @app.route('/api/jogadores/<jid>', methods=['DELETE'])
 def deletar_jogador(jid):
