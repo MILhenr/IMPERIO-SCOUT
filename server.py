@@ -11,7 +11,8 @@ ANALISE_URL = os.environ.get("ANALISE_URL", "")
 ANALISE_BOT_SECRET = os.environ.get("ANALISE_BOT_SECRET", "scoutbot_secret_2024")
 LIGA_PARA_CAT = {"lnf": "Nacional", "base": "Base", "outros": "Outros"}
 
-return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor, sslmode="require")
+def get_db():
+    return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor, sslmode="require")
 
 def init_db():
     with get_db() as conn:
@@ -34,10 +35,11 @@ def init_db():
                 passes INTEGER DEFAULT 0,
                 criado_em TEXT
             )''')
-            # Adiciona coluna import_id se não existir (para bancos já criados)
             c.execute('''ALTER TABLE times ADD COLUMN IF NOT EXISTS import_id TEXT''')
         conn.commit()
     print("✅ DB OK")
+
+init_db()
 
 def sync_analise(jogador, time):
     if not ANALISE_URL:
