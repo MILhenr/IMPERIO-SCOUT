@@ -229,6 +229,8 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16
       <button class="btn-jogo" onclick="addJogo()">🏁 +1 Jogo</button>
       <button class="btn-jogo" style="background:rgba(239,68,68,.2);border-color:rgba(239,68,68,.4)" onclick="removeJogo()">−1</button>
       <button class="btn-jogo" style="background:rgba(239,68,68,.25);border-color:rgba(239,68,68,.5)" onclick="deletarTimeAtual()">🗑 Apagar Time</button>
+      <button class="btn-jogo" id="btn-importar-analise" style="background:rgba(34,197,94,.2);border-color:rgba(34,197,94,.5)" onclick="importarTimeAnalise()">📤 Importar Análise.io</button>
+
     </div>
   </div>
   <div class="section-title">Jogadores</div>
@@ -670,6 +672,21 @@ function exportarTudo(){
   XLSX.utils.book_append_sheet(wb,wsRt,'📊 Resumo Times');
   XLSX.writeFile(wb,'scout_stats.xlsx');
   toast('📊 Excel exportado!');
+}
+
+async function importarTimeAnalise(){
+  var t = times[currentIdx]; if(!t) return;
+  var elegíveis = (t.jogadores||[]).filter(function(j){ return (j.gols||0) > 0 || (j.passes||0) > 0; });
+  if(!elegíveis.length){ toast('⚠️ Nenhum jogador com gol ou assistência'); return; }
+  var btn = document.getElementById('btn-importar-analise');
+  btn.textContent = '⏳ Importando...'; btn.disabled = true;
+  var r = await api('/api/times/'+t.id+'/importar-analise', {method:'POST'});
+  btn.textContent = '📤 Importar Análise.io'; btn.disabled = false;
+  if(r && r.ok){
+    toast('✅ '+r.criados+' criados · '+r.atualizados+' atualizados no Análise.io!');
+  } else {
+    toast('⚠️ Erro ao importar. Tente novamente.');
+  }
 }
 
 document.getElementById('new-nome').addEventListener('keyup',function(e){ if(e.key==='Enter') addJogador(); });
