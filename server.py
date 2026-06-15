@@ -1,4 +1,5 @@
 import os, uuid, json
+import urllib.request, urllib.parse, urllib.error
 from datetime import datetime
 from flask import Flask, request, jsonify, send_file
 import psycopg2
@@ -6,9 +7,11 @@ from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
 DATABASE_URL = os.environ.get("DATABASE_URL")
+ANALISE_URL = os.environ.get("ANALISE_URL", "")
+ANALISE_BOT_SECRET = os.environ.get("ANALISE_BOT_SECRET", "scoutbot_secret_2024")
+LIGA_PARA_CAT = {"lnf": "Nacional", "base": "Base", "outros": "Outros"}
 
-def get_db():
-    return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor, sslmode="require")
+return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor, sslmode="require")
 
 def init_db():
     with get_db() as conn:
@@ -36,7 +39,79 @@ def init_db():
         conn.commit()
     print("✅ DB OK")
 
-init_db()
+def sync_analise(jogador, time):
+    if not ANALISE_URL:
+        return
+    gols = jogador.get("gols", 0)
+    passes = jogador.get("passes", 0)
+    if gols == 0 and passes == 0:
+        return
+    cat = LIGA_PARA_CAT.get(time.get("liga", ""), "Outros")
+    comp = time.get("nome", "")
+    clube = time.get("nome", "")
+    payload = {
+        "nome": jogador["nome"],
+        "idade": 0,
+        "posicao": "",
+        "modalidade": "Futsal",
+        "clube": clube,
+        "pe": "Direito",
+        "disponivel": True,
+        "cat1": cat,
+        "comp1": comp,
+        "stats_gols1": str(gols),
+        "stats_assists1": str(passes),
+        "stats_jogos1": str(time.get("jogos", 0)),
+        "stats_gols": str(gols),
+        "stats_assists": str(passes),
+        "stats_jogos": str(time.get("jogos", 0)),
+        "status": "aprovado",
+        "foto": None
+    }
+    try:
+        busca_url = f"{ANALISE_URL}/api/bot/atletas?nome={urllib.parse.quote(jogador['nome'])}&clube={urllib.parse.quote(clube)}"
+        req = urllib.request.Request(busca_url, headers={"X-Bot-Secret": ANALISE_BOT_SECRET})
+        with urllib.request.urlopen(req, timeout=8) as r:
+            encontrados = json.loads(r.read())
+        if encontrados:
+            aid = encontrados[0]["id"]
+            update_payload = {
+                "nome": jogador["nome"],
+                "idade": int(encontrados[0].get("idade") or 0),
+                "posicao": encontrados[0].get("posicao", ""),
+                "modalidade": "Futsal",
+                "clube": clube,
+                "pe": encontrados[0].get("pe", "Direito"),
+                "disponivel": True,
+                "cat1": cat,
+                "comp1": comp,
+                "stats_gols1": str(gols),
+                "stats_assists1": str(passes),
+                "stats_jogos1": str(time.get("jogos", 0)),
+                "stats_gols": str(gols),
+                "stats_assists": str(passes),
+                "stats_jogos": str(time.get("jogos", 0)),
+                "status": "aprovado",
+                "foto": encontrados[0].get("foto")
+            }
+            req2 = urllib.request.Request(
+                f"{ANALISE_URL}/api/sync/atleta/{aid}",
+                data=json.dumps(update_payload).encode(),
+                headers={"Content-Type": "application/json", "X-Bot-Secret": ANALISE_BOT_SECRET},
+                method="PUT"
+            )
+            urllib.request.urlopen(req2, timeout=8)
+        else:
+            req2 = urllib.request.Request(
+                f"{ANALISE_URL}/api/sync/atleta",
+                data=json.dumps(payload).encode(),
+                headers={"Content-Type": "application/json", "X-Bot-Secret": ANALISE_BOT_SECRET},
+                method="POST"
+            )
+            urllib.request.urlopen(req2, timeout=8)
+    except Exception as e:
+        print(f"⚠️ Sync Analise.io falhou: {e}")
+
 
 @app.route('/')
 def index():
@@ -105,7 +180,15 @@ def editar_jogador(jid):
         with conn.cursor() as c:
             c.execute("UPDATE jogadores SET gols=%s, passes=%s WHERE id=%s",
                 (d['gols'], d['passes'], jid))
+            c.execute("SELECT * FROM jogadores WHERE id=%s", (jid,))
+            jogador = dict(c.fetchone())
+            c.execute("SELECT * FROM times WHERE id=%s", (jogador['time_id'],))
+            time = dict(c.fetchone())
         conn.commit()
+    try:
+        sync_analise(jogador, time)
+    except Exception as e:
+        print(f"⚠️ Sync error: {e}")
     return jsonify({"ok": True})
 
 @app.route('/api/jogadores/<jid>', methods=['DELETE'])
