@@ -623,7 +623,9 @@ async function importarTimes(){
 function exportarCSVAnalise(){
   var t = times[currentIdx]; if(!t) return;
   var cat = {"lnf":"Nacional","base":"Base","outros":"Outros"}[t.liga]||"Outros";
-  var comp = t.nome;
+  var comp = prompt("Nome da competição (ex: LNF Silver, Paulista Sub-20):", t.nome);
+  if(comp === null) return;
+  if(!comp.trim()) comp = t.nome;
   var rows = ['nome,clube,cat1,comp1,cat2,comp2,cat3,comp3,gols1,assists1,jogos1,gols2,assists2,jogos2,gols3,assists3,jogos3'];
   (t.jogadores||[]).forEach(function(j){
     if((j.gols||0)===0 && (j.passes||0)===0) return;
