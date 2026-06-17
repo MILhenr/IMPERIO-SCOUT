@@ -101,6 +101,7 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16
 .import-tabs{display:flex;gap:4px;background:var(--card);border-radius:8px;padding:3px;margin-bottom:16px}
 .import-tab{flex:1;padding:7px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:var(--muted);transition:all .2s}
 .import-tab.active{background:var(--blue);color:#fff}
+/* Import item */
 .import-item{background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .import-item-info{font-size:13px}
 .import-item-id{font-size:10px;color:var(--muted);margin-top:2px;font-family:monospace}
@@ -114,6 +115,8 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16
 </head>
 <body>
 <div class="toast" id="toast"></div>
+
+
 
 <!-- MODAL: NOVO TIME -->
 <div class="modal-overlay" id="modalTime">
@@ -131,27 +134,7 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16
   </div>
 </div>
 
-<!-- MODAL: IMPORTAR JOGADORES DO TIME (N° e Nome) -->
-<div class="modal-overlay" id="modalImportTime">
-  <div class="modal">
-    <div class="modal-title">📥 Importar Jogadores</div>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Modelo CSV: <code style="background:var(--card);padding:2px 6px;border-radius:4px">n,nome</code><br><br>Cole o CSV abaixo ou arraste o arquivo.</p>
-    <div class="drop-zone" id="dz-time" onclick="document.getElementById('file-time').click()" ondragover="dzOver(event,'dz-time')" ondragleave="dzLeave('dz-time')" ondrop="dzDropTime(event)">
-      <div style="font-size:28px;margin-bottom:6px">📄</div>
-      <div style="font-size:13px;font-weight:600;color:var(--light)">Arraste o CSV ou clique</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:4px">Formato: n,nome</div>
-    </div>
-    <input type="file" id="file-time" accept=".csv" style="display:none" onchange="handleCSVTime(this)">
-    <div id="prev-time" style="display:none">
-      <div style="font-size:12px;font-weight:700;margin-bottom:6px" id="prev-time-title"></div>
-      <div class="preview-list" id="prev-time-list"></div>
-      <button class="btn-primary" onclick="confirmarImportTime()">IMPORTAR JOGADORES →</button>
-    </div>
-    <button class="btn-cancel" style="margin-top:8px" onclick="fecharModal('modalImportTime')">Cancelar</button>
-  </div>
-</div>
-
-<!-- MODAL: IMPORTAR CSV GERAL -->
+<!-- MODAL: IMPORTAR -->
 <div class="modal-overlay" id="modalImport">
   <div class="modal">
     <div class="modal-title">📥 Importar CSV</div>
@@ -193,12 +176,34 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16
 <div class="modal-overlay" id="modalImports">
   <div class="modal">
     <div class="modal-title">🗂 Gerenciar Imports</div>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Cada linha abaixo é um lote de import.</p>
-    <div id="imports-lista"></div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Cada linha abaixo é um lote de import. Você pode apagar um lote inteiro sem afetar os outros times.</p>
+    <div id="imports-lista">
+      <div style="text-align:center;color:var(--muted);padding:20px">Carregando...</div>
+    </div>
     <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px">
       <button class="btn-danger" onclick="apagarTudo()">🗑 APAGAR TUDO DO BANCO</button>
     </div>
     <button class="btn-cancel" style="margin-top:8px" onclick="fecharModal('modalImports')">Fechar</button>
+  </div>
+</div>
+
+
+<!-- MODAL: IMPORTAR JOGADORES DO TIME -->
+<div class="modal-overlay" id="modalImportTime">
+  <div class="modal">
+    <div class="modal-title">📥 Importar Jogadores</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Modelo: <code style="background:var(--card);padding:2px 6px;border-radius:4px">n,nome</code></p>
+    <div class="drop-zone" id="dz-time" onclick="document.getElementById('file-time').click()" ondragover="dzOver(event,'dz-time')" ondragleave="dzLeave('dz-time')" ondrop="dzDropTime(event)">
+      <div style="font-size:28px;margin-bottom:6px">📄</div>
+      <div style="font-size:13px;font-weight:600;color:var(--light)">Arraste o CSV ou clique</div>
+    </div>
+    <input type="file" id="file-time" accept=".csv" style="display:none" onchange="handleCSVTime(this)">
+    <div id="prev-time" style="display:none">
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px" id="prev-time-title"></div>
+      <div class="preview-list" id="prev-time-list"></div>
+      <button class="btn-primary" onclick="confirmarImportTime()">IMPORTAR →</button>
+    </div>
+    <button class="btn-cancel" style="margin-top:8px" onclick="fecharModal('modalImportTime')">Cancelar</button>
   </div>
 </div>
 
@@ -245,13 +250,12 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16
       </div>
       <button class="btn-jogo" onclick="addJogo()">🏁 +1 Jogo</button>
       <button class="btn-jogo" style="background:rgba(239,68,68,.2);border-color:rgba(239,68,68,.4)" onclick="removeJogo()">−1</button>
-      <!-- BOTÃO IMPORTAR JOGADORES DO TIME -->
-      <button class="btn-jogo" style="background:rgba(59,130,246,.25);border-color:rgba(59,130,246,.6)" onclick="abrirImportTime()">📥 Importar Jogadores</button>
-      <!-- BOTÃO EXPORTAR JOGADORES (só N° e Nome) -->
-      <button class="btn-jogo" style="background:rgba(245,158,11,.2);border-color:rgba(245,158,11,.5)" onclick="exportarJogadoresSimples()">📋 Exportar Jogadores</button>
+      <button class="btn-jogo" style="background:rgba(239,68,68,.25);border-color:rgba(239,68,68,.5)" onclick="deletarTimeAtual()">🗑 Apagar Time</button>
       <button class="btn-jogo" style="background:rgba(34,197,94,.2);border-color:rgba(34,197,94,.5)" onclick="exportarCSVAnalise()">📥 CSV Análise.io</button>
       <button class="btn-jogo" id="btn-importar-analise" style="background:rgba(34,197,94,.2);border-color:rgba(34,197,94,.5)" onclick="importarTimeAnalise()">📤 Importar Análise.io</button>
-      <button class="btn-jogo" style="background:rgba(239,68,68,.25);border-color:rgba(239,68,68,.5)" onclick="deletarTimeAtual()">🗑 Apagar Time</button>
+      <button class="btn-jogo" style="background:rgba(59,130,246,.25);border-color:rgba(59,130,246,.6)" onclick="abrirImportTime()">📥 Importar Jogadores</button>
+      <button class="btn-jogo" style="background:rgba(245,158,11,.2);border-color:rgba(245,158,11,.5)" onclick="exportarJogadoresSimples()">📋 Exportar Jogadores</button>
+
     </div>
   </div>
   <div class="section-title">Jogadores</div>
@@ -278,7 +282,7 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16
 var times = [];
 var currentIdx = null;
 var currentTab = 'lnf';
-var csvJParsed = [], csvTParsed = [], csvTimeParsed = [];
+var csvJParsed = [], csvTParsed = [];
 
 async function api(url, opts){
   try{
@@ -509,95 +513,50 @@ function renderJogadores(){
   }).join('');
 }
 
-// ── IMPORTAR JOGADORES DO TIME (N° e Nome) ────────────────────
-function abrirImportTime(){
-  csvTimeParsed=[];
-  document.getElementById('prev-time').style.display='none';
-  document.getElementById('file-time').value='';
-  abrirModal('modalImportTime');
-}
-function dzDropTime(e){ e.preventDefault(); dzLeave('dz-time'); var f=e.dataTransfer.files[0]; if(f) processCSVTime(f); }
-function handleCSVTime(input){ var f=input.files[0]; if(f) processCSVTime(f); }
-function processCSVTime(file){
-  var reader=new FileReader();
-  reader.onload=function(e){
-    var lines=e.target.result.trim().split('\n').filter(function(l){ return l.trim(); });
-    var headers=lines[0].split(',').map(function(h){ return h.trim().toLowerCase().replace(/[^\w]/g,''); });
-    csvTimeParsed=lines.slice(1).map(function(line){
-      var vals=line.split(',').map(function(v){ return v.trim().replace(/^"|"$/g,''); });
-      var obj={}; headers.forEach(function(h,i){ obj[h]=vals[i]||''; }); return obj;
-    }).filter(function(r){ return r.nome||r.jogador||r.nmjogador; });
-    document.getElementById('prev-time-title').textContent=csvTimeParsed.length+' jogador(es) encontrado(s)';
-    document.getElementById('prev-time-list').innerHTML=csvTimeParsed.map(function(r){
-      var num=r.n||r.numero||r.nm||r.nmero||'—';
-      var nome=r.nome||r.jogador||r.nmjogador;
-      return '<div class="preview-item"><strong style="min-width:30px">'+num+'</strong><span>'+nome+'</span></div>';
-    }).join('');
-    document.getElementById('prev-time').style.display='block';
-  };
-  reader.readAsText(file);
-}
-async function confirmarImportTime(){
-  if(currentIdx===null){ toast('⚠️ Nenhum time aberto'); return; }
-  if(!csvTimeParsed.length){ toast('⚠️ CSV vazio'); return; }
-  var t=times[currentIdx]; var count=0;
-  for(var i=0;i<csvTimeParsed.length;i++){
-    var r=csvTimeParsed[i];
-    var nome=r.nome||r.jogador||r.nmjogador; if(!nome) continue;
-    var num=r.n||r.numero||r.nm||r.nmero||'—';
-    var jaExiste=(t.jogadores||[]).find(function(j){ return j.nome.toLowerCase()===nome.toLowerCase(); });
-    if(jaExiste) continue;
-    await api('/api/times/'+t.id+'/jogadores',{method:'POST',body:JSON.stringify({num:num,nome:nome,gols:0,passes:0})});
-    count++;
-  }
-  await recarregarTime();
-  fecharModal('modalImportTime');
-  toast('✅ '+count+' jogador(es) importado(s)!');
-}
-
-// ── EXPORTAR JOGADORES (só N° e Nome) ─────────────────────────
-function exportarJogadoresSimples(){
-  var t=times[currentIdx]; if(!t) return;
-  if(!(t.jogadores||[]).length){ toast('⚠️ Nenhum jogador'); return; }
-  var rows=['n,nome'];
-  t.jogadores.forEach(function(j){
-    rows.push((j.num||'—')+','+j.nome);
-  });
-  var blob=new Blob([rows.join('\n')],{type:'text/csv'});
-  var a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=t.nome.replace(/\s+/g,'_')+'_jogadores.csv';
-  a.click();
-  toast('📋 CSV de jogadores exportado!');
-}
-
 // ── GERENCIAR IMPORTS ─────────────────────────────────────────
 async function abrirImports(){
   abrirModal('modalImports');
-  var lista=document.getElementById('imports-lista');
-  lista.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px">Carregando...</div>';
-  var imports=await api('/api/imports');
-  if(!imports||!imports.length){ lista.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px">Nenhum import registrado.</div>'; return; }
-  lista.innerHTML=imports.map(function(imp){
-    var data=imp.criado_em?imp.criado_em.substring(0,16).replace('T',' '):'—';
-    return '<div class="import-item"><div class="import-item-info"><strong>'+imp.total_times+' times importados</strong><div class="import-item-id">'+data+' · ID: '+imp.import_id+'</div></div><button class="import-item-apagar" onclick="apagarImport(''+imp.import_id+'','+imp.total_times+')">🗑 Apagar</button></div>';
+  var lista = document.getElementById('imports-lista');
+  lista.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px">Carregando...</div>';
+  var imports = await api('/api/imports');
+  if(!imports || !imports.length){
+    lista.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px">Nenhum import registrado.</div>';
+    return;
+  }
+  lista.innerHTML = imports.map(function(imp){
+    var data = imp.criado_em ? imp.criado_em.substring(0,16).replace('T',' ') : '—';
+    return '<div class="import-item">'
+      +'<div class="import-item-info">'
+      +'<strong>'+imp.total_times+' times importados</strong>'
+      +'<div class="import-item-id">'+data+' · ID: '+imp.import_id+'</div>'
+      +'</div>'
+      +'<button class="import-item-apagar" onclick="apagarImport(\''+imp.import_id+'\','+imp.total_times+')">🗑 Apagar</button>'
+      +'</div>';
   }).join('');
 }
 
-async function apagarImport(import_id,total){
-  if(!confirm('Apagar esse lote de '+total+' times?')) return;
-  var r=await api('/api/imports/'+import_id,{method:'DELETE'});
-  if(r&&r.ok){ toast('✅ '+r.times_apagados+' times apagados!'); await carregarTimes(); await abrirImports(); }
+async function apagarImport(import_id, total){
+  if(!confirm('Apagar esse lote de '+total+' times? Os jogadores deles também serão removidos.')) return;
+  var r = await api('/api/imports/'+import_id, {method:'DELETE'});
+  if(r && r.ok){
+    toast('✅ '+r.times_apagados+' times apagados!');
+    await carregarTimes();
+    await abrirImports();
+  }
 }
 
 async function apagarTudo(){
-  if(!confirm('⚠️ APAGAR TUDO?')) return;
-  if(!confirm('Tem certeza absoluta?')) return;
-  var r=await api('/api/apagar-tudo',{method:'DELETE'});
-  if(r&&r.ok){ toast('🗑 Banco limpo!'); fecharModal('modalImports'); await carregarTimes(); }
+  if(!confirm('⚠️ APAGAR TUDO? Times e jogadores serão removidos permanentemente!')) return;
+  if(!confirm('Tem certeza absoluta? Isso não pode ser desfeito!')) return;
+  var r = await api('/api/apagar-tudo', {method:'DELETE'});
+  if(r && r.ok){
+    toast('🗑 Banco limpo!');
+    fecharModal('modalImports');
+    await carregarTimes();
+  }
 }
 
-// ── IMPORTAR CSV GERAL ────────────────────────────────────────
+// ── IMPORTAR ──────────────────────────────────────────────────
 function abrirImport(){
   csvJParsed=[]; csvTParsed=[];
   document.getElementById('prev-j').style.display='none';
@@ -679,30 +638,31 @@ async function importarTimes(){
     var nj=r.jogador||r.nome_jogador||r.jogadores;
     if(nj) map[tn].jogadores.push({num:r.n||r.numero||r.nm||'—',nome:nj,gols:parseInt(r.gols)||0,passes:parseInt(r.passes)||0});
   });
-  var r=await api('/api/migrar',{method:'POST',body:JSON.stringify(Object.values(map))});
+  var r = await api('/api/migrar',{method:'POST',body:JSON.stringify(Object.values(map))});
   await carregarTimes();
   fecharModal('modalImport');
-  if(r&&r.ok) toast('✅ '+r.times+' times · '+r.jogadores+' jogadores importados!');
+  if(r && r.ok) toast('✅ '+r.times+' times · '+r.jogadores+' jogadores importados!');
 }
 
 function exportarCSVAnalise(){
-  var t=times[currentIdx]; if(!t) return;
-  var cat={"lnf":"Nacional","base":"Base","outros":"Outros"}[t.liga]||"Outros";
-  var comp=prompt("Nome da competição (ex: LNF Silver, Paulista Sub-20):",t.nome);
-  if(comp===null) return;
-  if(!comp.trim()) comp=t.nome;
-  var rows=['nome,clube,cat1,comp1,gols1,assists1,jogos1,cat2,comp2,gols2,assists2,jogos2,cat3,comp3,gols3,assists3,jogos3'];
+  var t = times[currentIdx]; if(!t) return;
+  var cat = {"lnf":"Nacional","base":"Base","outros":"Outros"}[t.liga]||"Outros";
+  var comp = prompt("Nome da competição (ex: LNF Silver, Paulista Sub-20):", t.nome);
+  if(comp === null) return;
+  if(!comp.trim()) comp = t.nome;
+  var rows = ['nome,clube,cat1,comp1,gols1,assists1,jogos1,cat2,comp2,gols2,assists2,jogos2,cat3,comp3,gols3,assists3,jogos3'];
   (t.jogadores||[]).forEach(function(j){
-    if((j.gols||0)===0&&(j.passes||0)===0) return;
-    rows.push([j.nome,t.nome,cat,comp,j.gols||0,j.passes||0,t.jogos,'','','','','','','','','',''].join(','));
+    if((j.gols||0)===0 && (j.passes||0)===0) return;
+    rows.push([j.nome, t.nome, cat, comp, j.gols||0, j.passes||0, t.jogos, '', '', '', '', '', '', '', '', '', ''].join(','));
   });
   if(rows.length===1){ toast('⚠️ Nenhum jogador com gol ou assistência'); return; }
-  var blob=new Blob([rows.join('\n')],{type:'text/csv'});
-  var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download=t.nome.replace(/\s+/g,'_')+'_analise.csv'; a.click();
+  var blob = new Blob([rows.join('\n')], {type:'text/csv'});
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = t.nome.replace(/\s+/g,'_')+'_analise.csv'; a.click();
   toast('📥 CSV exportado!');
 }
 
+// ── EXPORTAR ──────────────────────────────────────────────────
 function exportarTudo(){
   if(!times.length){ toast('⚠️ Nenhum time'); return; }
   var wb=XLSX.utils.book_new();
@@ -758,15 +718,73 @@ function exportarTudo(){
 }
 
 async function importarTimeAnalise(){
+  var t = times[currentIdx]; if(!t) return;
+  var elegíveis = (t.jogadores||[]).filter(function(j){ return (j.gols||0) > 0 || (j.passes||0) > 0; });
+  if(!elegíveis.length){ toast('⚠️ Nenhum jogador com gol ou assistência'); return; }
+  var btn = document.getElementById('btn-importar-analise');
+  btn.textContent = '⏳ Importando...'; btn.disabled = true;
+  var r = await api('/api/times/'+t.id+'/importar-analise', {method:'POST'});
+  btn.textContent = '📤 Importar Análise.io'; btn.disabled = false;
+  if(r && r.ok){
+    toast('✅ '+r.criados+' criados · '+r.atualizados+' atualizados no Análise.io!');
+  } else {
+    toast('⚠️ Erro ao importar. Tente novamente.');
+  }
+}
+
+var csvTimeParsed = [];
+function abrirImportTime(){
+  csvTimeParsed=[];
+  document.getElementById('prev-time').style.display='none';
+  document.getElementById('file-time').value='';
+  abrirModal('modalImportTime');
+}
+function dzDropTime(e){ e.preventDefault(); dzLeave('dz-time'); var f=e.dataTransfer.files[0]; if(f) processCSVTime(f); }
+function handleCSVTime(input){ var f=input.files[0]; if(f) processCSVTime(f); }
+function processCSVTime(file){
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var lines=e.target.result.trim().split('\n').filter(function(l){ return l.trim(); });
+    var headers=lines[0].split(',').map(function(h){ return h.trim().toLowerCase().replace(/[^\w]/g,''); });
+    csvTimeParsed=lines.slice(1).map(function(line){
+      var vals=line.split(',').map(function(v){ return v.trim().replace(/^"|"$/g,''); });
+      var obj={}; headers.forEach(function(h,i){ obj[h]=vals[i]||''; }); return obj;
+    }).filter(function(r){ return r.nome||r.jogador; });
+    document.getElementById('prev-time-title').textContent=csvTimeParsed.length+' jogador(es)';
+    document.getElementById('prev-time-list').innerHTML=csvTimeParsed.map(function(r){
+      return '<div class="preview-item"><strong style="min-width:30px">'+(r.n||r.numero||r.nm||'—')+'</strong><span>'+(r.nome||r.jogador)+'</span></div>';
+    }).join('');
+    document.getElementById('prev-time').style.display='block';
+  };
+  reader.readAsText(file);
+}
+async function confirmarImportTime(){
+  if(currentIdx===null){ toast('⚠️ Nenhum time aberto'); return; }
+  if(!csvTimeParsed.length){ toast('⚠️ CSV vazio'); return; }
+  var t=times[currentIdx]; var count=0;
+  for(var i=0;i<csvTimeParsed.length;i++){
+    var r=csvTimeParsed[i];
+    var nome=r.nome||r.jogador; if(!nome) continue;
+    var num=r.n||r.numero||r.nm||'—';
+    if((t.jogadores||[]).find(function(j){ return j.nome.toLowerCase()===nome.toLowerCase(); })) continue;
+    await api('/api/times/'+t.id+'/jogadores',{method:'POST',body:JSON.stringify({num:num,nome:nome,gols:0,passes:0})});
+    count++;
+  }
+  await recarregarTime();
+  fecharModal('modalImportTime');
+  toast('✅ '+count+' jogador(es) importado(s)!');
+}
+function exportarJogadoresSimples(){
   var t=times[currentIdx]; if(!t) return;
-  var elegiveis=(t.jogadores||[]).filter(function(j){ return (j.gols||0)>0||(j.passes||0)>0; });
-  if(!elegiveis.length){ toast('⚠️ Nenhum jogador com gol ou assistência'); return; }
-  var btn=document.getElementById('btn-importar-analise');
-  btn.textContent='⏳ Importando...'; btn.disabled=true;
-  var r=await api('/api/times/'+t.id+'/importar-analise',{method:'POST'});
-  btn.textContent='📤 Importar Análise.io'; btn.disabled=false;
-  if(r&&r.ok){ toast('✅ '+r.criados+' criados · '+r.atualizados+' atualizados no Análise.io!'); }
-  else { toast('⚠️ Erro ao importar. Tente novamente.'); }
+  if(!(t.jogadores||[]).length){ toast('⚠️ Nenhum jogador'); return; }
+  var rows=['n,nome'];
+  t.jogadores.forEach(function(j){ rows.push((j.num||'—')+','+j.nome); });
+  var blob=new Blob([rows.join('\n')],{type:'text/csv'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=t.nome.replace(/\s+/g,'_')+'_jogadores.csv';
+  a.click();
+  toast('📋 CSV exportado!');
 }
 
 document.getElementById('new-nome').addEventListener('keyup',function(e){ if(e.key==='Enter') addJogador(); });
